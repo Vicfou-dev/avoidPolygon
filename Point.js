@@ -24,7 +24,6 @@ class Point {
     nearest(points) {
         //var points = Array.from(points);
 
-        //console.log(points, this);
         for (var i = points.length - 1; i >= 0; --i) {
             if (points[i].x == this.x && points[i].y == this.y) {
                 points.splice(i, 1);

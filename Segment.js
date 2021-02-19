@@ -1,4 +1,4 @@
-const Point = require("./Point");
+const Point = require("./Point.js");
 
 class Segment {
     constructor(p1, p2) {
@@ -83,26 +83,6 @@ class Segment {
         
         for(var i = 0; i < polygons.length; i++) {
             segments = segment.avoidPolygon(polygons[i]);
-            if(i) {
-                
-                let point = line[line.length - 1];
-                //console.log(segments);
-                
-                /*
-                for(var i = 0; i < segments.length; i++) {
-                    if(point.p2.equals(segments[i].p2)) {
-                        line[line.length - 1] = new Segment(point.p1, segments[i].p2)
-                    }
-                    if(point.p2.equals(segments[i].p1) ) {
-                        line[line.length - 1] = new Segment(point.p1, segments[i].p1)
-                    }
-                }*/
-                
-                //console.log(segments);
-                //segments[0] = new Segment(line.pop().p2, segments[0].p1);
-            }
-
-            //console.log(segments);
 
             for(var j = 0; j < segments.length; j++) {
                 line.push(segments[j]);
@@ -115,7 +95,7 @@ class Segment {
             }
             
         }
-
+        //line = optimize(line, polygons);
         //console.log(line)
 
         return line;
@@ -139,7 +119,7 @@ class Segment {
                 }
             }
 
-            let second_part = new Segment(nearest,this.p2);
+            let second_part = new Segment(nearest, this.p2);
             if (second_part.cross(polygon) == false) {
                 arr.push(second_part);
             }
@@ -158,14 +138,6 @@ class Segment {
         }
 
         return arr;
-    }
-    
-    reduce(arr) {
-        for(var i = 0; i < arr.length; i++) {
-            var segment = new Segment(arr[i][p1], arr[i + 1][p2]);
-            if(segment.cross(polygon)) {
-            }
-        }
     }
 
     cross(polygon) {
@@ -197,8 +169,8 @@ class Segment {
             return polygon.cover(this);
         }
         
-
     }
+
 }
 
 module.exports = Segment;

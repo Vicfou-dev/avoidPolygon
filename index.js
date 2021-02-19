@@ -1,10 +1,12 @@
 const Segment = require('./Segment.js');
 const Point = require('./Point.js');
 const Polygon = require('./Polygon.js');
-const Svg = require('./Svg.js');
+const Path = require('./Path.js');
+const Svg = require('./Svg.js');;
 
-var seg = new Segment(new Point(40, 10), new Point(150, 210));
+var seg = new Segment(new Point(40, 10), new Point(100, 210));
 var poly = new Polygon();
+
 var obstacle = new Polygon();
 
 poly.addVector(50,20);
@@ -31,9 +33,15 @@ svg.addPolygon(obstacle);
 svg.addSegment(seg);
 svg.draw();
 
-const segments = seg.avoidMultiplePloygons([poly]);
+var obstacles = [poly, obstacle];
+
+var segments = seg.avoidMultiplePloygons(obstacles);
+segments = Path.order(seg.p1, seg.p2, segments);
+segments = Path.optimize(segments, obstacles)
+
+
 svg.addPolygon(poly);
-//svg.addPolygon(obstacle);
+svg.addPolygon(obstacle);
 segments.forEach(segment => svg.addSegment(segment))
 svg.draw();
 svg.save();
