@@ -1,15 +1,19 @@
 {
-  "name": "collision",
+  "name": "avoidpolygon",
   "version": "1.0.0",
+  "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vicfou-dev/avoidPolygon.git"
+  },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "open": "^7.4.2"
+  "bugs": {
+    "url": "https://github.com/Vicfou-dev/avoidPolygon/issues"
   },
-  "devDependencies": {},
-  "description": ""
+  "homepage": "https://github.com/Vicfou-dev/avoidPolygon#readme"
 }
