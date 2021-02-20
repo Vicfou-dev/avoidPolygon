@@ -84,20 +84,23 @@ class Path {
         this.setOption(option);
 
         var is_needed_to_draw = option.draw.show;
-        
+
         if(is_needed_to_draw) {
     
             this.svg = new Svg();
             this.svg.setWidth(option.draw.width);
             this.svg.setHeight(option.draw.height);
-            this.svg.addMultiplePolygons(this.obstacles);
-            this.svg.addPoint(this.start);
-            this.svg.addPoint(this.end);
-            this.svg.draw();
+            if(option.draw.step) {
+                this.svg.addMultiplePolygons(this.obstacles);
+                this.svg.addPoint(this.start);
+                this.svg.addPoint(this.end);
+                this.svg.draw();
 
-            this.svg.addMultiplePolygons(this.obstacles);
-            this.svg.addSegment(segment);
-            this.svg.draw();
+                this.svg.addMultiplePolygons(this.obstacles);
+                this.svg.addSegment(segment);
+                this.svg.draw();
+            }
+            
         }
 
         var segments = [];
