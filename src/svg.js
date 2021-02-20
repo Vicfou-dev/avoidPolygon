@@ -20,6 +20,14 @@ class Svg {
 
     }
 
+    setWidth(width) {
+        this.width = width;
+    }
+
+    setHeight(height) {
+        this.height = height;
+    }
+
     addMultiplePolygons(polygons) {
         for(var i = 0; i < polygons.length; i++){
             this.addPolygon(polygons[i]);
@@ -30,6 +38,15 @@ class Svg {
         for(var i = 0; i < segments.length; i++){
             this.addSegment(segments[i]);
         }
+    }
+
+    getContent() {
+        var result = '';
+        for(var i = 0; i < this.content.length; i++) {
+            result += this.content[i];
+        }
+
+        return result;
     }
 
     addPolygon(polygon) {
@@ -47,9 +64,7 @@ class Svg {
     save() {
         var file = path.join(__dirname, '..', this.output);
         fs.writeFileSync(file,'');
-        for(var i = 0; i < this.content.length; i++) {
-            fs.appendFileSync(path.join(__dirname, '..',this.output), this.content[i]);
-        }
+        fs.appendFileSync(path.join(__dirname, '..',this.output), this.getContent());
         
     }
 

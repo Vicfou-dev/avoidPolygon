@@ -38,23 +38,58 @@ class Path {
         this.obstacles.push(obstacle);
     }
 
-    find(option = {}) {
+    setOption(option) {
         if(option.optimize == undefined) {
             option.optimize = false;
         }
 
         if(option.draw == undefined) {
-            option.draw = false;
+            option.draw = {};
         }
+
+        if(option.draw.show == undefined) {
+            option.draw.show = false;
+        }
+
+        if(option.draw.output == undefined) {
+            option.draw.output = "index.html";
+        }
+
+        if(option.draw.step == undefined) {
+            option.draw.step = false;
+        }
+
+        if(option.draw.step == undefined) {
+            option.draw.output = false;
+        }
+
+        if(option.draw.width == undefined) {
+            option.draw.width = 1000;
+        }
+
+        if(option.draw.height == undefined) {
+            option.draw.height = 600;
+        }
+    
+    }
+
+    getDraw() {
+        return (this.svg === null || this.svg  === undefined) ? undefined : this.svg.getContent();
+    }
+
+    find(option = {}) {
 
         var segment = new Segment(this.start, this.end);
 
-        if(option.draw) {
-            if(option.output == undefined) {
-                option.output = "index.html";
-            }
+        this.setOption(option);
+
+        var is_needed_to_draw = option.draw.show;
+        
+        if(is_needed_to_draw) {
     
             this.svg = new Svg();
+            this.svg.setWidth(option.draw.width);
+            this.svg.setHeight(option.draw.height);
             this.svg.addMultiplePolygons(this.obstacles);
             this.svg.addPoint(this.start);
             this.svg.addPoint(this.end);
@@ -84,16 +119,15 @@ class Path {
             
         }
 
-        if(!option.opti) {
-            if(option.draw) {
+        if(is_needed_to_draw && (!option.draw.optimize || option.draw.step)) {
+            this.svg.addMultiplePolygons(this.obstacles);
+            this.svg.addMultipleSegments(line_segments);
+            this.svg.draw();
+            this.svg.save();
+        }
 
-                this.svg.addMultiplePolygons(this.obstacles);
-                this.svg.addMultipleSegments(line_segments);
-                this.svg.draw();
-                this.svg.save();
-
-            }
-            return line_segments; 
+        if(!option.optimize) {
+            return line_segments;
         }
 
         var ordered_segments = [];
@@ -146,7 +180,6 @@ class Path {
             }      
             else {
                 segment = segments[i];
-                console.log(segment, i);
             }
             
             optimised_path_segments.push(segment)
@@ -154,7 +187,7 @@ class Path {
         }
 
         optimised_path_segments.push(segments[segments.length - 1]);
-        if(option.draw) {
+        if(is_needed_to_draw) {
 
             this.svg.addMultiplePolygons(this.obstacles);
             this.svg.addMultipleSegments(optimised_path_segments);

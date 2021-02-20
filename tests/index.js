@@ -16,5 +16,5 @@ path.createObstacle([
     [150, 90]
 ]);
 
-var result = path.find({opti : false, draw : true});
+var result = path.find({optimize : true, draw : {show : true, step : true}});
 console.log(result);
