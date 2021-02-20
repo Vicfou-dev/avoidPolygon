@@ -45,10 +45,10 @@ class Svg {
     }
 
     save() {
-        var file = path.join(process.cwd(), this.output);
+        var file = path.join(__dirname, '..', this.output);
         fs.writeFileSync(file,'');
         for(var i = 0; i < this.content.length; i++) {
-            fs.appendFileSync(path.join(process.cwd(), this.output), this.content[i]);
+            fs.appendFileSync(path.join(__dirname, '..',this.output), this.content[i]);
         }
         
     }
