@@ -7,12 +7,12 @@ class Svg {
         this.figures = [];
 
         this.height = 600;
-        this.width  = 1000;
+        this.width = 1000;
 
         this.colors = {
-            polygon : "#FF0000",
-            segment : "#0000FF",
-            point   : "#000000"
+            polygon: "#FF0000",
+            segment: "#0000FF",
+            point: "#000000"
         }
 
         this.output = file ? file : 'index.html';
@@ -29,20 +29,20 @@ class Svg {
     }
 
     addMultiplePolygons(polygons) {
-        for(var i = 0; i < polygons.length; i++){
+        for (var i = 0; i < polygons.length; i++) {
             this.addPolygon(polygons[i]);
         }
     }
 
     addMultipleSegments(segments) {
-        for(var i = 0; i < segments.length; i++){
+        for (var i = 0; i < segments.length; i++) {
             this.addSegment(segments[i]);
         }
     }
 
     getContent() {
         var result = '';
-        for(var i = 0; i < this.content.length; i++) {
+        for (var i = 0; i < this.content.length; i++) {
             result += this.content[i];
         }
 
@@ -50,34 +50,43 @@ class Svg {
     }
 
     addPolygon(polygon) {
-        this.figures.push({objet: polygon, type : 'polygon'})
+        this.figures.push({
+            objet: polygon,
+            type: 'polygon'
+        })
     }
 
     addSegment(segment) {
-        this.figures.push({objet: segment, type : 'segment'})
+        this.figures.push({
+            objet: segment,
+            type: 'segment'
+        })
     }
 
     addPoint(segment) {
-        this.figures.push({objet: segment, type : 'point'})
+        this.figures.push({
+            objet: segment,
+            type: 'point'
+        })
     }
 
     save() {
         var file = path.join(__dirname, '..', this.output);
-        fs.writeFileSync(file,'');
-        fs.appendFileSync(path.join(__dirname, '..',this.output), this.getContent());
-        
+        fs.writeFileSync(file, '');
+        fs.appendFileSync(path.join(__dirname, '..', this.output), this.getContent());
+
     }
 
     draw() {
         var result = '';
-        for(var figure of this.figures) {
+        for (var figure of this.figures) {
 
-            switch(figure.type) {
+            switch (figure.type) {
                 case 'polygon':
                     var points = figure.objet.vectrices.map(point => `${point.x},${point.y}`).join(" ");
                     result += `\t<polygon fill="${this.colors[figure.type]}" stroke="${this.colors[figure.type]}" points="${points}" />\n`
                     break;
-                case 'point': 
+                case 'point':
                     result += `\t<circle fill="${this.colors[figure.type]}" cx="${figure.objet.x}" cy="${figure.objet.y}" r="3"/>\n`
                     break;
                 case 'segment':
@@ -90,7 +99,7 @@ class Svg {
 
         var header = `<svg widht="${this.width}" height="${this.height}">`;
         var bottom = '</svg>';
-        var content = "\n"+ header + "\n" + result + bottom + "\n";
+        var content = "\n" + header + "\n" + result + bottom + "\n";
         this.content.push(content);
         this.figures = [];
 
