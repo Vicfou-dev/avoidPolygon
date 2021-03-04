@@ -1,0 +1,43 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Shortest Path</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="css/index.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <div id="create">Make Polygon</div>
+        <div id="save">Save Polygon</div>
+        <div id="destroy">Destroy Polygon</div>
+    </div>
+    <svg id='area'>
+        <defs>
+            <pattern id="smallGrid" width="8" height="8" patternUnits="userSpaceOnUse">
+                <path d="M 8 0 L 0 0 0 8" fill="none" stroke="gray" stroke-width="0.5" />
+            </pattern>
+            <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
+                <rect width="80" height="80" fill="url(#smallGrid)" />
+                <path d="M 80 0 L 0 0 0 80" fill="none" stroke="gray" stroke-width="1" />
+            </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid)" />
+    </svg>
+</body>
+
+</html>
+<script src="js/tween.js"></script>
+<script src="js/draggable.js"></script>
+<script src="js/build.js"></script>
+<script src="js/index.js"></script>
+<script>
+    var manager = new Manager();
+
+    document.getElementById('create')
+    document.getElementById('update');
+    document.getElementById('destroy');
+</script>
