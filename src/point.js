@@ -22,20 +22,19 @@ class Point {
     }
 
     nearest(points) {
-        //var points = Array.from(points);
-
-        for (var i = points.length - 1; i >= 0; --i) {
-            if (points[i].x == this.x && points[i].y == this.y) {
-                points.splice(i, 1);
-            }
-        }
 
         var point = points[0];
+        var index = 0;
         for(var i = 0; i < points.length; i++) {
             if(this.distance(point) >= this.distance(points[i])) {
                 point = points[i];
+                index = i;
+
             }
         }
+
+        points.splice(index, 1);
+        
         return point;
 
     }

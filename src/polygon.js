@@ -1,4 +1,5 @@
 const Point = require("./point.js");
+const Segment = require("./segment.js");
 
 class Polygon {
     constructor() {
@@ -13,6 +14,14 @@ class Polygon {
 
     size() {
         return this.vectrices.length;
+    }
+    
+    isSegment() {
+        return this.size() == 2;
+    }
+
+    buildAsSegment() {
+        return new Segment(this.vectrices[0], this.vectrices[1]);
     }
 
     index(point) {
@@ -56,9 +65,16 @@ class Polygon {
         return inside;
     }
 
+    encounter(segment) {
+        var result = this.size() <= 2 ? segment.cut(new Segment(this.vectrices[0], this.vectrices[this.vectrices.length - 1])) : segment.cross(this);
+        return result ? true : false;
+    }
+
     cover(segment) {
+
         var p1_position = this.index(segment.p1);
         var p2_position = this.index(segment.p2);
+
         if (p1_position != -1 && p2_position != -1) {
             var pos_distance = Math.abs(p1_position - p2_position);
             if (pos_distance == 1 || pos_distance == this.size() - 1) {
@@ -66,7 +82,7 @@ class Polygon {
             }
 
         }
-
+        
         var middle = segment.middle();
         return this.inside(middle);
     }

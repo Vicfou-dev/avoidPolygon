@@ -359,9 +359,11 @@ class Manager {
 
             path.createObstacle(paths);
         }
-        var segments = path.find({
-            optimize: false
+        var result = path.find({
+            optimize: true
         });
+
+        var segments = Array.from(result);
 
         segments.forEach(segment => this.createSegment(segment.p1, segment.p2));
 
