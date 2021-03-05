@@ -80,7 +80,7 @@ class Svg {
     draw() {
         var result = '';
         for (var figure of this.figures) {
-
+            console.log(this.figures)
             switch (figure.type) {
                 case 'polygon':
                     var points = figure.objet.vectrices.map(point => `${point.x},${point.y}`).join(" ");

@@ -20,10 +20,6 @@ class Polygon {
         return this.size() == 2;
     }
 
-    buildAsSegment() {
-        return new Segment(this.vectrices[0], this.vectrices[1]);
-    }
-
     index(point) {
         for (var i = 0; i < this.size(); i++) {
             if (this.vectrices[i].equals(point)) {

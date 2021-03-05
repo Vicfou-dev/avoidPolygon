@@ -116,6 +116,7 @@ class Segment {
         return null;
     }
 
+
     avoidPolygon(polygon, arr = []) {
         var result = polygon.encounter(this);
 
@@ -133,7 +134,6 @@ class Segment {
                     arr[arr.length] = first_part;
                 }
 
-                console.log(first_part)
             }
             else {
                 var data = first_part.avoidPolygon(polygon, []);
@@ -141,27 +141,23 @@ class Segment {
                 for( var i = 0; i < data.length; i++) {
                     if(polygon.index(data[i].p1) != -1 && polygon.index(data[i].p2) != -1) {
                         if(temp.length) {
-                            console.log('in')
                             if(temp[i - 1].merge(data[i]).cross(polygon) == false) {
                                 temp[i - 1] = temp[i - 1].merge(data[i])
-                            }
-                            else {
-                                temp[temp.length] = data[i];
+                                continue;
                             }
                             
                         }
                         else {
                             if(arr.length && arr[arr.length - 1].merge(data[i]).cross(polygon) == false) {
                                 arr[arr.length - 1] = arr[arr.length - 1].merge(data[i])
+                                continue;
                             }
-                            else {
-                                temp[temp.length] = data[i];
-                            }
+                            
                         }
                     }
-                    else {
-                        temp[temp.length] = data[i];
-                    }
+
+                    temp[temp.length] = data[i];
+                    
                 }
 
                 for(var i = 0; i < temp.length; i++) {
@@ -187,32 +183,27 @@ class Segment {
                         if(temp.length) {
                             if( temp[i - 1].merge(data[i]).cross(polygon) == false) {
                                 temp[i - 1] = temp[i - 1].merge(data[i])
-                            }
-                            else {
-                                temp[temp.length] = data[i];
+                                continue;
                             }
                             
                         }
                         else {
                             if(arr.length && arr[arr.length - 1].merge(data[i]).cross(polygon) == false) {
                                 arr[arr.length - 1] = arr[arr.length - 1].merge(data[i])
+                                continue;
                             }
-                            else {
-                                temp[temp.length] = data[i];
-                            }
+
                         }
                     }
-                    else {
-                        temp[temp.length] = data[i];
-                    }
+
+                    temp[temp.length] = data[i];
+                    
                 }
 
                 for(var i = 0; i < temp.length; i++) {
                     arr[arr.length] = temp[i];
                 }
             }
-
-            console.log(arr)
             
             return arr;
         }

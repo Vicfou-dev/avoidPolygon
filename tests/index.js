@@ -8,6 +8,12 @@ const path = new Path({
     y: 210
 });
 
+path.createObstacle([
+    [40,50],
+    [50,50],
+    [140,100],
+    [180,90],
+])
 
 var result = path.find({
     optimize: true,

@@ -830,25 +830,29 @@ class Path {
 
         var segments = [];
         var line_segments = [];
-        var origin = this.end;
-        /*
+        var origin = this.start;
+        
+        
         for(var i = 0 ; i < this.obstacles.length; i++){ 
             for(var j = i +1 ; j < this.obstacles.length; j++){
-                console.log(this.obstacles[i].centroid(),this.obstacles[j].centroid());
-                if(origin.distance(this.obstacles[i].centroid()) < origin.distance(this.obstacles[j].centroid())){
+                var point_i = Array.from(this.obstacles[i].vectrices);
+                var point_j = Array.from(this.obstacles[j].vectrices);
+                if(origin.distance(origin.nearest(point_i)) > origin.distance(origin.nearest(point_j))){
+                    console.log('in');
                     var temp = this.obstacles[j];
                     this.obstacles[j] = this.obstacles[i];
                     this.obstacles[i] = temp;
                 }
             }
-        }*/
+        }
+
+        console.log(this.obstacles);
 
         var polygons = Array.from(this.obstacles);
         
         var tree = [];
         tree[tree.length] = [];
         tree[tree.length - 1][0] = [inital];
-        var end = this.end;
 
         for (var i = 0; i < polygons.length; i++) {
             var lastrow = tree[tree.length - 1]; 
@@ -889,166 +893,15 @@ class Path {
 
         }
 
-        return path;
-
-        var optimised_path_segments = [];
-
-        var segments = path;
-
-        for (var i = 0; i < segments.length - 1; i++) {
-
-            var segment = segments[i].merge(segments[i + 1]);
-
-            var crossed = false;
-            for (var j = 0; j < polygons.length; j++) {
-                if(polygons[j].isSegment()) {
-                    if(segment.intersection(polygons[j].buildAsSegment()) ) {
-                        crossed = true;
-                        break;
-                    }
-                }
-                if (segment.cross(polygons[j])) {
-                    crossed = true;
-                    break;
-                }
-            }
-
-
-            if (!crossed) {
-                i++;
-            } 
-            else {
-                segment = segments[i];
-            }
-
-            if(inital.p1.equals(segment.p1) && inital.p2.equals(segment.p2)) {
-                return [inital];
-            }
-            
-            optimised_path_segments[optimised_path_segments.length] = segment;
-
-        }
-
-        var last = segments[segments.length - 1];
-        if(optimised_path_segments.length == 0) {
-            optimised_path_segments.push(last);
-        }
-
-        var p1 = last.p2 !== this.end;
-        var p2 = last.p1 !== this.end; 
-
-        if(p1) {
-            optimised_path_segments.push(new Segment(last.p2, this.end));
-        }
-
-        if(p2 && !p1) {
-            optimised_path_segments.push(new Segment(last.p1, this.end));
-        }
-
-        return optimised_path_segments;
-        
 
         if (is_needed_to_draw && (!option.draw.optimize || option.draw.step)) {
             this.svg.addMultiplePolygons(this.obstacles);
-            this.svg.addMultipleSegments(line_segments);
+            this.svg.addMultipleSegments(path);
             this.svg.draw();
             this.svg.save();
         }
 
-        if (!option.optimize) {
-            return line_segments;
-        }
-
-        var ordered_segments = [];
-        var index = 0;
-        for(var i = 0; i < line_segments.length; i++) {
-            var seg = line_segments[i];
-            if(this.start == seg.p1 || this.start == seg.p2) {
-                index = i;
-                break;
-            }
-        }
-        var current_segment = line_segments.splice(index, 1)[0];
-        ordered_segments.push(current_segment);
-
-        while (line_segments.length) {
-            var middle = current_segment.middle();
-
-            var points = [];
-
-            for (var i = 0; i < line_segments.length; i++) {
-                points.push(line_segments[i].middle());
-            }
-
-            var point = middle.nearest(points);
-
-            for (var j = 0; j < points.length; j++) {
-                if (point.equals(points[j])) {
-                    current_segment = line_segments[j];
-                    ordered_segments.push(line_segments.splice(j, 1)[0])
-                    break;
-                }
-            }
-        }
-
-        segments = Array.from(ordered_segments);
-        var optimised_path_segments = [];
-
-        var inital = new Segment(this.start, this.end);
-        
-        for (var i = 0; i < segments.length - 1; i++) {
-
-            var segment = segments[i].merge(segments[i + 1]);
-
-            var crossed = false;
-            for (var j = 0; j < polygons.length; j++) {
-                if(polygons[j].size() <= 2) {
-                    if(segment.intersection(new Segment(polygons[j].vectrices[0], polygons[j].vectrices[1])) ) {
-                        crossed = true;
-                        break;
-                    }
-                }
-                if (segment.cross(polygons[j])) {
-                    crossed = true;
-                    break;
-                }
-            }
-
-
-            if (!crossed) {
-                i++;
-            } 
-            else {
-                segment = segments[i];
-            }
-
-            if(inital.p1.equals(segment.p1) && inital.p2.equals(segment.p2)) {
-                return [inital];
-            }
-            
-            optimised_path_segments[optimised_path_segments.length] = segment;
-
-        }
-
-        var last = segments[segments.length - 1];
-        if(optimised_path_segments.length == 0) {
-            optimised_path_segments.push(last);
-        }
-
-        var p1 = last.p2 !== this.end;
-        var p2 = last.p1 !== this.end; 
-
-        if(p1) {
-            optimised_path_segments.push(new Segment(last.p2, this.end));
-        }
-
-        if(p2 && !p1) {
-            optimised_path_segments.push(new Segment(last.p1, this.end));
-        }
-        
-        return optimised_path_segments;
-
-
+        return path;
     }
 }
 
@@ -1119,10 +972,6 @@ class Polygon {
     
     isSegment() {
         return this.size() == 2;
-    }
-
-    buildAsSegment() {
-        return new Segment(this.vectrices[0], this.vectrices[1]);
     }
 
     index(point) {
@@ -1309,6 +1158,7 @@ class Segment {
         return null;
     }
 
+
     avoidPolygon(polygon, arr = []) {
         var result = polygon.encounter(this);
 
@@ -1326,7 +1176,6 @@ class Segment {
                     arr[arr.length] = first_part;
                 }
 
-                console.log(first_part)
             }
             else {
                 var data = first_part.avoidPolygon(polygon, []);
@@ -1334,27 +1183,23 @@ class Segment {
                 for( var i = 0; i < data.length; i++) {
                     if(polygon.index(data[i].p1) != -1 && polygon.index(data[i].p2) != -1) {
                         if(temp.length) {
-                            console.log('in')
                             if(temp[i - 1].merge(data[i]).cross(polygon) == false) {
                                 temp[i - 1] = temp[i - 1].merge(data[i])
-                            }
-                            else {
-                                temp[temp.length] = data[i];
+                                continue;
                             }
                             
                         }
                         else {
                             if(arr.length && arr[arr.length - 1].merge(data[i]).cross(polygon) == false) {
                                 arr[arr.length - 1] = arr[arr.length - 1].merge(data[i])
+                                continue;
                             }
-                            else {
-                                temp[temp.length] = data[i];
-                            }
+                            
                         }
                     }
-                    else {
-                        temp[temp.length] = data[i];
-                    }
+
+                    temp[temp.length] = data[i];
+                    
                 }
 
                 for(var i = 0; i < temp.length; i++) {
@@ -1380,32 +1225,27 @@ class Segment {
                         if(temp.length) {
                             if( temp[i - 1].merge(data[i]).cross(polygon) == false) {
                                 temp[i - 1] = temp[i - 1].merge(data[i])
-                            }
-                            else {
-                                temp[temp.length] = data[i];
+                                continue;
                             }
                             
                         }
                         else {
                             if(arr.length && arr[arr.length - 1].merge(data[i]).cross(polygon) == false) {
                                 arr[arr.length - 1] = arr[arr.length - 1].merge(data[i])
+                                continue;
                             }
-                            else {
-                                temp[temp.length] = data[i];
-                            }
+
                         }
                     }
-                    else {
-                        temp[temp.length] = data[i];
-                    }
+
+                    temp[temp.length] = data[i];
+                    
                 }
 
                 for(var i = 0; i < temp.length; i++) {
                     arr[arr.length] = temp[i];
                 }
             }
-
-            console.log(arr)
             
             return arr;
         }
@@ -1534,7 +1374,7 @@ class Svg {
     draw() {
         var result = '';
         for (var figure of this.figures) {
-
+            console.log(this.figures)
             switch (figure.type) {
                 case 'polygon':
                     var points = figure.objet.vectrices.map(point => `${point.x},${point.y}`).join(" ");
