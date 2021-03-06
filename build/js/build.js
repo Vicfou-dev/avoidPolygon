@@ -726,10 +726,107 @@ module.exports = {
     Polygon: require('./src/polygon.js'),
     Path: require('./src/path.js')
 }
-},{"./src/path.js":5,"./src/point.js":6,"./src/polygon.js":7,"./src/segment.js":8}],5:[function(require,module,exports){
+},{"./src/path.js":6,"./src/point.js":7,"./src/polygon.js":8,"./src/segment.js":9}],5:[function(require,module,exports){
+const Segment = require('./segment.js');
+class graph {
+    constructor(points = []) {
+        this.points = Array.from(points);
+        this.length = points.length;
+        this.nodes  = {};
+        this.path   = [];
+    }
+
+    build(polygons = []) {
+        var graph = {};
+        for(var i = 0; i < this.points.length; i ++) {
+            graph[i] = {};
+            for(var j = i + 1; j < this.points.length; j++) {
+
+                var segment = new Segment(this.points[j], this.points[i]);
+                var crossed = false;
+                for(var h = 0; h < polygons.length; h++) {
+                    var result = polygons[h].isSegment() ? segment.intersectionNoEdgeFromPolygon(polygons[h]) : segment.cross(polygons[h]);
+                    if(result) {
+                        var crossed = true;
+                        break;
+                    }
+                }
+
+                if(!crossed) {
+                    graph[i][j] = segment.distance();
+                }
+            }
+        }
+
+        this.graph = graph;
+    }
+
+    dijkstra(start, end) {
+        var node = this.points.indexOf(start);
+        this.nodes[node] = {weight : 0, prev : null};
+        this.end = this.points.indexOf(end);
+
+        this.findNode();
+
+        let previous = this.nodes[this.end].prev;
+        let path = [this.end,previous];
+        while(previous != node) {
+            previous = this.nodes[previous].prev;
+            path.push(previous);
+        }
+
+        return path.reverse();
+    }
+
+    findNode()
+    {
+        if(this.path.length == this.length) {
+            return;
+        }
+
+        let smaller = Infinity
+        let smallerNode;
+        for(const key in this.nodes) {
+            if(this.nodes[key].weight < smaller && !this.path.includes(key)) {
+                smaller = this.nodes[key].weight;
+                smallerNode = key
+            }
+        }
+
+        const search = {
+            graph : this.graph[smallerNode],
+            node  : this.nodes[smallerNode]
+        };
+
+        for(const key in search.graph) {
+            if(this.path.includes(key))
+            {
+                continue;
+            }
+
+            const weight = search.node.weight + search.graph[key]
+            const prev   = smallerNode;
+            if(this.nodes[key] != null) {
+                if(weight < this.nodes[key].weight) {
+                    this.nodes[key] = {weight: weight, prev: prev}
+                }
+            }
+            else {
+                this.nodes[key] = {weight: weight, prev: prev}
+            }
+        }
+
+        this.path.push(smallerNode);
+        this.findNode();
+    }
+}
+
+module.exports = graph;
+},{"./segment.js":9}],6:[function(require,module,exports){
 const Segment = require('./segment.js');
 const Point = require('./point.js');
 const Polygon = require('./polygon.js');
+const Graph = require('./graph.js');
 const Svg = require('./svg');
 
 class Path {
@@ -749,17 +846,22 @@ class Path {
         this.obstacles = [];
     }
 
+    makePolygon(polygon) {
+        var obstacle = new Polygon();
+        for (var i = 0; i < polygon.length; i++) {
+            obstacle.addVector(...polygon[i]);
+        }
+
+        return obstacle;
+    }
+
 
     createObstacle(polygon) {
         if (polygon instanceof Polygon) {
             this.obstacles.push(polygon);
             return;
         }
-        var obstacle = new Polygon();
-        for (var i = 0; i < polygon.length; i++) {
-            obstacle.addVector(...polygon[i]);
-        }
-
+        var obstacle = this.makePolygon(polygon);
         this.obstacles.push(obstacle);
     }
 
@@ -802,6 +904,52 @@ class Path {
         return (this.svg === null || this.svg === undefined) ? undefined : this.svg.getContent();
     }
 
+    getPointOfPath(path) {
+        var points = [];
+        for(var i = 0; i < path.length; i++) {
+
+            var find = false;
+            for(var j = 0; j < points.length; j++) {
+                if(path[i].p1.equals(points[j])) {
+                    find = true;
+                    break;
+                }
+            }
+
+            if(find == false) {
+                points[points.length] = path[i].p1;
+            }
+            
+            find = false;
+            for(var j = 0; j < points.length; j++) {
+                if(path[i].p2.equals(points[j])) {
+                    find = true;
+                    break;
+                }
+            }
+
+            if(find == false) {
+                points[points.length] = path[i].p2;
+            }
+        }
+
+        return points;
+    }
+
+    orderObstacle(point) {
+        for(var i = 0 ; i < this.obstacles.length; i++){ 
+            for(var j = i + 1 ; j < this.obstacles.length; j++){
+                var point_i = Array.from(this.obstacles[i].vectrices);
+                var point_j = Array.from(this.obstacles[j].vectrices);
+                if(point.distance(point.nearest(point_i)) > point.distance(point.nearest(point_j))){
+                    var temp = this.obstacles[j];
+                    this.obstacles[j] = this.obstacles[i];
+                    this.obstacles[i] = temp;
+                }
+            }
+        }
+    }
+
     find(option = {}) {
 
         var inital = new Segment(this.start, this.end);
@@ -822,91 +970,74 @@ class Path {
                 this.svg.draw();
 
                 this.svg.addMultiplePolygons(this.obstacles);
-                this.svg.addSegment(segment);
+                this.svg.addSegment(inital);
                 this.svg.draw();
             }
 
         }
 
         var segments = [];
-        var line_segments = [];
-        var origin = this.start;
         
-        
-        for(var i = 0 ; i < this.obstacles.length; i++){ 
-            for(var j = i +1 ; j < this.obstacles.length; j++){
-                var point_i = Array.from(this.obstacles[i].vectrices);
-                var point_j = Array.from(this.obstacles[j].vectrices);
-                if(origin.distance(origin.nearest(point_i)) > origin.distance(origin.nearest(point_j))){
-                    console.log('in');
-                    var temp = this.obstacles[j];
-                    this.obstacles[j] = this.obstacles[i];
-                    this.obstacles[i] = temp;
-                }
-            }
-        }
-
-        console.log(this.obstacles);
+        this.orderObstacle(this.start);
 
         var polygons = Array.from(this.obstacles);
         
-        var tree = [];
-        tree[tree.length] = [];
-        tree[tree.length - 1][0] = [inital];
-
+        var paths = [];
+        paths[paths.length] = [inital]
+        
         for (var i = 0; i < polygons.length; i++) {
-            var lastrow = tree[tree.length - 1]; 
-            tree[tree.length] = [];
+            var lastrow = paths[paths.length - 1]; 
 
-            for(var j = 0; j < lastrow.length; j++) {
-                var segment = lastrow[j][lastrow[j].length - 1];
-                var segments = segment.avoidPolygon(polygons[i]);
+            var segment = lastrow[lastrow.length - 1];
+                    
+            var segments = segment.avoidPolygon(polygons[i]);
 
-                var new_row = [];
-                for(var p = 0; p < lastrow[j].length - 1; p++) {
-                    new_row[new_row.length] = lastrow[j][p];
-                }
-                
-                for(var h = 0; h < segments.length; h++) {
-                    new_row[new_row.length] = segments[h];
-                }
+            var new_row = [];
+            for(var p = 0; p < lastrow.length - 1; p++) {
+                new_row[new_row.length] = lastrow[p];
+            }
+                    
+            for(var h = 0; h < segments.length; h++) {
+                new_row[new_row.length] = segments[h];
+            }
 
-                tree[tree.length - 1][j] = new_row;
-            } 
+            paths[paths.length] = new_row;
 
         }
 
-        const paths = tree[tree.length - 1];
-        var min = Infinity;
-        var path = [];
+        const path = paths[paths.length - 1];
+        var points = this.getPointOfPath(path);
+        var graph = new Graph(points);
+        graph.build(polygons);
 
-        for(var i = 0; i < paths.length; i++) {
-            var distance = 0;
-            for(var j = 0; j < paths[i].length; j++) {
-                distance += paths[i][j].distance();
+        var edges = graph.dijkstra(this.start, this.end);
+        var edges_point = [];
+        for(var i = 0; i < points.length; i++) {
+            for(var j = 0; j < edges.length; j++) {
+                if(edges[j] == i) {
+                    edges_point[edges_point.length] = points[i];
+                }
             }
-
-            if(distance < min) {
-                min = distance;
-                path = paths[i];
-            }
-
         }
 
+        var shortest_path = [];
+        for(var i = 0; i < edges_point.length - 1; i++) {
+            shortest_path[shortest_path.length] = new Segment(edges_point[i], edges_point[i + 1]);
+        }
 
         if (is_needed_to_draw && (!option.draw.optimize || option.draw.step)) {
-            this.svg.addMultiplePolygons(this.obstacles);
-            this.svg.addMultipleSegments(path);
+            this.svg.addMultiplePolygons(polygons);
+            this.svg.addMultipleSegments(shortest_path);
             this.svg.draw();
             this.svg.save();
         }
 
-        return path;
+        return shortest_path;
     }
 }
 
 module.exports = Path;
-},{"./point.js":6,"./polygon.js":7,"./segment.js":8,"./svg":9}],6:[function(require,module,exports){
+},{"./graph.js":5,"./point.js":7,"./polygon.js":8,"./segment.js":9,"./svg":10}],7:[function(require,module,exports){
 class Point {
     constructor(x, y) {
         this.x = x;
@@ -951,7 +1082,7 @@ class Point {
 }
 
 module.exports = Point;
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 const Point = require("./point.js");
 const Segment = require("./segment.js");
 
@@ -1039,7 +1170,7 @@ class Polygon {
 }
 
 module.exports = Polygon;
-},{"./point.js":6,"./segment.js":8}],8:[function(require,module,exports){
+},{"./point.js":7,"./segment.js":9}],9:[function(require,module,exports){
 const Point = require("./point.js");
 
 class Segment {
@@ -1080,7 +1211,7 @@ class Segment {
             return new Segment(this.p2, segment.p1);
         }
 
-        return null;
+        return this;
     }
 
     distance() {
@@ -1088,6 +1219,18 @@ class Segment {
     }
 
     contain(point) {
+
+        /*
+        var ax = this.p1.x - this.p2.x;
+        var ay = this.p1.y - this.p2.y;
+        var apx = point.x - this.p1.x;
+        var apy = point.y - this.p1.y;
+
+        if( ax * apy != ay * apx) {
+            return false;
+        }*/
+
+
         if ((point.x == this.p1.x && point.y == this.p1.y) || (point.x == this.p2.x && point.y == this.p2.y))
 		{
 			return true;
@@ -1098,7 +1241,7 @@ class Segment {
 
     cut(segment) {
         if (this.p1.equals(segment.p1)) {
-            return this.p2;
+            return this.p1;
         }
 
 		if (this.p2.equals(segment.p2)) {
@@ -1111,6 +1254,41 @@ class Segment {
 
 		if (this.p1.equals(segment.p2)) {
             return this.p1
+        }
+
+        var vx1 = this.p2.x - this.p1.x;
+		var vy1 = this.p2.y - this.p1.y;
+		var vx2 = segment.p2.x - segment.p1.x;
+		var vy2 = segment.p2.y - segment.p1.y;
+
+        var t =  ( vy1 * (segment.p1.x - this.p1.x) - vx1 * (segment.p1.y - this.p1.y)) / ((vx1 * vy2 - vx2 * vy1));
+		var _x = Math.ceil(vx2 * t + segment.p1.x);
+		var _y = Math.ceil(vy2 * t + segment.p1.y);
+
+        var point = new Point(_x, _y);
+
+        if (this.contain(point) && segment.contain(point)) {
+            return point;
+        }
+
+        return null;
+    }
+    
+    intersectionNoEdge(segment) {
+        if (this.p1.equals(segment.p1)) {
+            return null;
+        }
+
+		if (this.p2.equals(segment.p2)) {
+            return null 
+        }
+
+		if (this.p2.equals(segment.p1)) {
+            return null
+        }
+
+		if (this.p1.equals(segment.p2)) {
+            return null;
         }
 
         var vx1 = this.p2.x - this.p1.x;
@@ -1162,99 +1340,49 @@ class Segment {
     avoidPolygon(polygon, arr = []) {
         var result = polygon.encounter(this);
 
-        if(result == true ) {
-            var point = this.middle();
-            
-            var nearest = point.nearest(polygon.crossable, point);
-            let first_part = new Segment(this.p1, nearest);
-            if (first_part.cross(polygon) == false) {
-                
-                if(arr.length && polygon.isSegment() == false && arr[arr.length - 1].merge(first_part).cross(polygon) == false) {
-                    arr[arr.length - 1] = arr[arr.length - 1].merge(first_part)
-                }
-                else {
-                    arr[arr.length] = first_part;
-                }
-
-            }
-            else {
-                var data = first_part.avoidPolygon(polygon, []);
-                var temp = [];
-                for( var i = 0; i < data.length; i++) {
-                    if(polygon.index(data[i].p1) != -1 && polygon.index(data[i].p2) != -1) {
-                        if(temp.length) {
-                            if(temp[i - 1].merge(data[i]).cross(polygon) == false) {
-                                temp[i - 1] = temp[i - 1].merge(data[i])
-                                continue;
-                            }
-                            
-                        }
-                        else {
-                            if(arr.length && arr[arr.length - 1].merge(data[i]).cross(polygon) == false) {
-                                arr[arr.length - 1] = arr[arr.length - 1].merge(data[i])
-                                continue;
-                            }
-                            
-                        }
-                    }
-
-                    temp[temp.length] = data[i];
-                    
-                }
-
-                for(var i = 0; i < temp.length; i++) {
-                    arr[arr.length] = temp[i];
-                }
+        if(result == false) {
+            if(!arr.length) {
+                arr[arr.length] = this;
             }
 
-            let second_part = new Segment(nearest, this.p2);
-            if (second_part.cross(polygon) == false) {
-                if(arr.length && polygon.isSegment() == false && arr[arr.length - 1].merge(second_part).cross(polygon) == false) {
-                    arr[arr.length - 1] = arr[arr.length - 1].merge(second_part)
-                }
-                else {
-                    arr[arr.length] = second_part;
-                }
-
-            }
-            else {   
-                var data = second_part.avoidPolygon(polygon, []);
-                var temp = [];
-                for( var i = 0; i < data.length; i++) {
-                    if(polygon.isSegment() == false && polygon.index(data[i].p1) != -1 && polygon.index(data[i].p2) != -1) {
-                        if(temp.length) {
-                            if( temp[i - 1].merge(data[i]).cross(polygon) == false) {
-                                temp[i - 1] = temp[i - 1].merge(data[i])
-                                continue;
-                            }
-                            
-                        }
-                        else {
-                            if(arr.length && arr[arr.length - 1].merge(data[i]).cross(polygon) == false) {
-                                arr[arr.length - 1] = arr[arr.length - 1].merge(data[i])
-                                continue;
-                            }
-
-                        }
-                    }
-
-                    temp[temp.length] = data[i];
-                    
-                }
-
-                for(var i = 0; i < temp.length; i++) {
-                    arr[arr.length] = temp[i];
-                }
-            }
-            
             return arr;
         }
 
-        if(!arr.length) {
-            arr[arr.length] = this;
+
+        var point = this.middle();
+            
+        if(polygon.crossable.length == 0) {
+            return [];
         }
-        
+
+        var nearest = point.nearest(polygon.crossable, point);
+        let first_part = new Segment(this.p1, nearest);
+        if (first_part.cross(polygon) == false) {
+                arr[arr.length] = first_part;
+        }
+        else {
+            var data = first_part.avoidPolygon(polygon, []);
+            for(var i = 0; i < data.length; i++) {
+                arr[arr.length] = data[i];
+            }
+        }
+
+        let second_part = new Segment(nearest, this.p2);
+        if (second_part.cross(polygon) == false) {
+                arr[arr.length] = second_part;
+        }
+        else {   
+            var data = second_part.avoidPolygon(polygon, []);
+            for(var i = 0; i < data.length; i++) {
+                arr[arr.length] = data[i];
+            }
+        }
+                      
         return arr;
+    }
+
+    intersectionNoEdgeFromPolygon(polygon) {
+        return this.intersectionNoEdge(new Segment(polygon.vectrices[0], polygon.vectrices[polygon.vectrices.length - 1]));
     }
 
     cross(polygon) {
@@ -1290,7 +1418,7 @@ class Segment {
 }
 
 module.exports = Segment;
-},{"./point.js":6}],9:[function(require,module,exports){
+},{"./point.js":7}],10:[function(require,module,exports){
 (function (__dirname){(function (){
 const path = require('path');
 const fs = require('fs');

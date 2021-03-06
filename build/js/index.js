@@ -204,7 +204,12 @@ class Manager {
         }
 
         if (element instanceof module.Polygon) {
-            var centroid = element.centroid();
+            return this.resizePolygone(element, size);
+        }
+    }
+
+    resizePolygone(element, size) {
+        var centroid = element.centroid();
             for (var i = 0; i < element.vectrices.length; i++) {
                 if (centroid.x >= element.vectrices[i].x) {
                     element.vectrices[i].x -= size;
@@ -219,7 +224,6 @@ class Manager {
                 }
             }
             return element;
-        }
     }
 
     parseDraggable(draggable) {
@@ -356,8 +360,10 @@ class Manager {
                 const y = parseInt(point.getAttribute('cy'), 10) + parseInt(matrixValues[5], 10)
                 paths.push([x, y]);
             }
+            
+            var poly = this.resizePolygone(path.makePolygon(paths),0);
 
-            path.createObstacle(paths);
+            path.createObstacle(poly);
         }
         var result = path.find({
             optimize: true

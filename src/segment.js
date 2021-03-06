@@ -38,7 +38,7 @@ class Segment {
             return new Segment(this.p2, segment.p1);
         }
 
-        return null;
+        return this;
     }
 
     distance() {
@@ -46,6 +46,18 @@ class Segment {
     }
 
     contain(point) {
+
+        /*
+        var ax = this.p1.x - this.p2.x;
+        var ay = this.p1.y - this.p2.y;
+        var apx = point.x - this.p1.x;
+        var apy = point.y - this.p1.y;
+
+        if( ax * apy != ay * apx) {
+            return false;
+        }*/
+
+
         if ((point.x == this.p1.x && point.y == this.p1.y) || (point.x == this.p2.x && point.y == this.p2.y))
 		{
 			return true;
@@ -56,7 +68,7 @@ class Segment {
 
     cut(segment) {
         if (this.p1.equals(segment.p1)) {
-            return this.p2;
+            return this.p1;
         }
 
 		if (this.p2.equals(segment.p2)) {
@@ -69,6 +81,41 @@ class Segment {
 
 		if (this.p1.equals(segment.p2)) {
             return this.p1
+        }
+
+        var vx1 = this.p2.x - this.p1.x;
+		var vy1 = this.p2.y - this.p1.y;
+		var vx2 = segment.p2.x - segment.p1.x;
+		var vy2 = segment.p2.y - segment.p1.y;
+
+        var t =  ( vy1 * (segment.p1.x - this.p1.x) - vx1 * (segment.p1.y - this.p1.y)) / ((vx1 * vy2 - vx2 * vy1));
+		var _x = Math.ceil(vx2 * t + segment.p1.x);
+		var _y = Math.ceil(vy2 * t + segment.p1.y);
+
+        var point = new Point(_x, _y);
+
+        if (this.contain(point) && segment.contain(point)) {
+            return point;
+        }
+
+        return null;
+    }
+    
+    intersectionNoEdge(segment) {
+        if (this.p1.equals(segment.p1)) {
+            return null;
+        }
+
+		if (this.p2.equals(segment.p2)) {
+            return null 
+        }
+
+		if (this.p2.equals(segment.p1)) {
+            return null
+        }
+
+		if (this.p1.equals(segment.p2)) {
+            return null;
         }
 
         var vx1 = this.p2.x - this.p1.x;
@@ -120,99 +167,49 @@ class Segment {
     avoidPolygon(polygon, arr = []) {
         var result = polygon.encounter(this);
 
-        if(result == true ) {
-            var point = this.middle();
-            
-            var nearest = point.nearest(polygon.crossable, point);
-            let first_part = new Segment(this.p1, nearest);
-            if (first_part.cross(polygon) == false) {
-                
-                if(arr.length && polygon.isSegment() == false && arr[arr.length - 1].merge(first_part).cross(polygon) == false) {
-                    arr[arr.length - 1] = arr[arr.length - 1].merge(first_part)
-                }
-                else {
-                    arr[arr.length] = first_part;
-                }
-
-            }
-            else {
-                var data = first_part.avoidPolygon(polygon, []);
-                var temp = [];
-                for( var i = 0; i < data.length; i++) {
-                    if(polygon.index(data[i].p1) != -1 && polygon.index(data[i].p2) != -1) {
-                        if(temp.length) {
-                            if(temp[i - 1].merge(data[i]).cross(polygon) == false) {
-                                temp[i - 1] = temp[i - 1].merge(data[i])
-                                continue;
-                            }
-                            
-                        }
-                        else {
-                            if(arr.length && arr[arr.length - 1].merge(data[i]).cross(polygon) == false) {
-                                arr[arr.length - 1] = arr[arr.length - 1].merge(data[i])
-                                continue;
-                            }
-                            
-                        }
-                    }
-
-                    temp[temp.length] = data[i];
-                    
-                }
-
-                for(var i = 0; i < temp.length; i++) {
-                    arr[arr.length] = temp[i];
-                }
+        if(result == false) {
+            if(!arr.length) {
+                arr[arr.length] = this;
             }
 
-            let second_part = new Segment(nearest, this.p2);
-            if (second_part.cross(polygon) == false) {
-                if(arr.length && polygon.isSegment() == false && arr[arr.length - 1].merge(second_part).cross(polygon) == false) {
-                    arr[arr.length - 1] = arr[arr.length - 1].merge(second_part)
-                }
-                else {
-                    arr[arr.length] = second_part;
-                }
-
-            }
-            else {   
-                var data = second_part.avoidPolygon(polygon, []);
-                var temp = [];
-                for( var i = 0; i < data.length; i++) {
-                    if(polygon.isSegment() == false && polygon.index(data[i].p1) != -1 && polygon.index(data[i].p2) != -1) {
-                        if(temp.length) {
-                            if( temp[i - 1].merge(data[i]).cross(polygon) == false) {
-                                temp[i - 1] = temp[i - 1].merge(data[i])
-                                continue;
-                            }
-                            
-                        }
-                        else {
-                            if(arr.length && arr[arr.length - 1].merge(data[i]).cross(polygon) == false) {
-                                arr[arr.length - 1] = arr[arr.length - 1].merge(data[i])
-                                continue;
-                            }
-
-                        }
-                    }
-
-                    temp[temp.length] = data[i];
-                    
-                }
-
-                for(var i = 0; i < temp.length; i++) {
-                    arr[arr.length] = temp[i];
-                }
-            }
-            
             return arr;
         }
 
-        if(!arr.length) {
-            arr[arr.length] = this;
+
+        var point = this.middle();
+            
+        if(polygon.crossable.length == 0) {
+            return [];
         }
-        
+
+        var nearest = point.nearest(polygon.crossable, point);
+        let first_part = new Segment(this.p1, nearest);
+        if (first_part.cross(polygon) == false) {
+                arr[arr.length] = first_part;
+        }
+        else {
+            var data = first_part.avoidPolygon(polygon, []);
+            for(var i = 0; i < data.length; i++) {
+                arr[arr.length] = data[i];
+            }
+        }
+
+        let second_part = new Segment(nearest, this.p2);
+        if (second_part.cross(polygon) == false) {
+                arr[arr.length] = second_part;
+        }
+        else {   
+            var data = second_part.avoidPolygon(polygon, []);
+            for(var i = 0; i < data.length; i++) {
+                arr[arr.length] = data[i];
+            }
+        }
+                      
         return arr;
+    }
+
+    intersectionNoEdgeFromPolygon(polygon) {
+        return this.intersectionNoEdge(new Segment(polygon.vectrices[0], polygon.vectrices[polygon.vectrices.length - 1]));
     }
 
     cross(polygon) {
