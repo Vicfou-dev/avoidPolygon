@@ -724,9 +724,10 @@ module.exports = {
     Point: require('./src/point.js'),
     Segment: require('./src/segment.js'),
     Polygon: require('./src/polygon.js'),
+    Obstacles: require('./src/obstacles.js'),
     Path: require('./src/path.js')
 }
-},{"./src/path.js":7,"./src/point.js":8,"./src/polygon.js":9,"./src/segment.js":10}],5:[function(require,module,exports){
+},{"./src/obstacles.js":7,"./src/path.js":8,"./src/point.js":9,"./src/polygon.js":10,"./src/segment.js":11}],5:[function(require,module,exports){
 class dijkstra {
     constructor(graph = {}) {
         this.graph = graph;
@@ -813,14 +814,7 @@ class graph {
             for(var j = i + 1; j < this.points.length; j++) {
 
                 var segment = new Segment(this.points[j], this.points[i]);
-                var crossed = false;
-                for(var h = 0; h < polygons.length; h++) {
-                    var result = polygons[h].isSegment() ? segment.intersectionNoEdge(polygons[h].buildSegments()[0]) : segment.cross(polygons[h]);
-                    if(result) {
-                        var crossed = true;
-                        break;
-                    }
-                }
+                var crossed = segment.crossMultiple(polygons)
 
                 if(!crossed) {
                     graph[i][j] = segment.distance();
@@ -833,10 +827,9 @@ class graph {
 
     shortestPath(start, end) {
         var algo = new Dijkstra(this.graph);
-        console.log(this.points.indexOf(start),this.points.indexOf(end))
+
         var edges = algo.exec(this.points.indexOf(start), this.points.indexOf(end));
 
-        console.log(edges);
         var edges_point = [];
         for(var i = 0; i < this.points.length; i++) {
             for(var j = 0; j < edges.length; j++) {
@@ -856,10 +849,59 @@ class graph {
 }
 
 module.exports = graph;
-},{"./dijkstra.js":5,"./segment.js":10}],7:[function(require,module,exports){
-const Segment = require('./segment.js');
-const Point = require('./point.js');
+},{"./dijkstra.js":5,"./segment.js":11}],7:[function(require,module,exports){
 const Polygon = require('./polygon.js');
+
+class obstacles {
+
+    constructor() {
+        this.obstacles = [];
+    }
+
+    get(index = -1) {
+        if(index == -1) {
+            return this.obstacles;
+        }
+
+        return this.obstacles[i];
+    }
+
+    make(polygon) {
+        var obstacle = new Polygon();
+        for (var i = 0; i < polygon.length; i++) {
+            obstacle.addVector(...polygon[i]);
+        }
+
+        return obstacle;
+    }
+
+    add(polygon) {
+        if (polygon instanceof Polygon) {
+            this.obstacles.push(polygon);
+            return;
+        }
+        var obstacle = this.makePolygon(polygon);
+        this.obstacles.push(obstacle);
+    }
+
+    order(point) {
+        for(var i = 0 ; i < this.obstacles.length; i++){ 
+            for(var j = i + 1 ; j < this.obstacles.length; j++){
+                var point_i = this.obstacles[i].vectrices;
+                var point_j = this.obstacles[j].vectrices;
+                if(point.distance(point.nearest(point_i)) > point.distance(point.nearest(point_j))){
+                    var temp = this.obstacles[j];
+                    this.obstacles[j] = this.obstacles[i];
+                    this.obstacles[i] = temp;
+                }
+            }
+        }
+    }
+}
+
+module.exports = obstacles;
+},{"./polygon.js":10}],8:[function(require,module,exports){
+const Point = require('./point.js');
 const Graph = require('./graph.js');
 const Svg = require('./svg');
 
@@ -877,26 +919,7 @@ class Path {
             this.end = new Point(end.x, end.y);
         } else throw new Error("End point invalid");
 
-        this.obstacles = [];
-    }
-
-    makePolygon(polygon) {
-        var obstacle = new Polygon();
-        for (var i = 0; i < polygon.length; i++) {
-            obstacle.addVector(...polygon[i]);
-        }
-
-        return obstacle;
-    }
-
-
-    createObstacle(polygon) {
-        if (polygon instanceof Polygon) {
-            this.obstacles.push(polygon);
-            return;
-        }
-        var obstacle = this.makePolygon(polygon);
-        this.obstacles.push(obstacle);
+        this.option = {};
     }
 
     setOption(option) {
@@ -932,105 +955,81 @@ class Path {
             option.draw.height = 600;
         }
 
+        this.option = option;
+
     }
 
-    getDraw() {
-        return (this.svg === null || this.svg === undefined) ? undefined : this.svg.getContent();
+    setObstacles(manager) {
+        this.obstacles = manager
     }
 
-    getPointOfObstacles(path) {
-        var points = [];
-        for(var i = 0; i < path.length; i++) {
-            var find = false;
-            for(var j = 0; j < points.length; j++) {
-                if(path[i].equals(points[j])) {
-                    find = true;
-                    break;
-                }
-            }
-
-            if(find == false) {
-                points[points.length] = path[i];
-            }
-            
+    startDraw() {
+        if(!this.option.draw.show) {
+            return
         }
-        
-        return points;
-    }
 
-    orderObstacle(point) {
-        for(var i = 0 ; i < this.obstacles.length; i++){ 
-            for(var j = i + 1 ; j < this.obstacles.length; j++){
-                var point_i = Array.from(this.obstacles[i].vectrices);
-                var point_j = Array.from(this.obstacles[j].vectrices);
-                if(point.distance(point.nearest(point_i)) > point.distance(point.nearest(point_j))){
-                    var temp = this.obstacles[j];
-                    this.obstacles[j] = this.obstacles[i];
-                    this.obstacles[i] = temp;
-                }
-            }
+        this.svg = new Svg();
+        this.svg.setWidth(option.draw.width);
+        this.svg.setHeight(option.draw.height);
+
+        if (!option.draw.step) {
+            return;
         }
+
+        this.svg.addMultiplePolygons(this.obstacles);
+        this.svg.addPoint(this.start);
+        this.svg.addPoint(this.end);
+        this.svg.draw();
+
+        this.svg.addMultiplePolygons(this.obstacles);
+        this.svg.addSegment(inital);
+        this.svg.draw();
+
     }
 
+    endDraw() {
+        if (!this.option.draw.show || !this.option.draw.step) {
+            return;
+        }
 
+        this.svg.addMultiplePolygons(polygons);
+        this.svg.addMultipleSegments(shortest_path);
+        this.svg.draw();
+        this.svg.save();
+    }
+    
 
     find(option = {}) {
 
-        var inital = new Segment(this.start, this.end);
-
         this.setOption(option);
 
-        var is_needed_to_draw = option.draw.show;
+        this.startDraw();
 
-        if (is_needed_to_draw) {
+        this.obstacles.order(this.start);
 
-            this.svg = new Svg();
-            this.svg.setWidth(option.draw.width);
-            this.svg.setHeight(option.draw.height);
-            if (option.draw.step) {
-                this.svg.addMultiplePolygons(this.obstacles);
-                this.svg.addPoint(this.start);
-                this.svg.addPoint(this.end);
-                this.svg.draw();
-
-                this.svg.addMultiplePolygons(this.obstacles);
-                this.svg.addSegment(inital);
-                this.svg.draw();
-            }
-
-        }
-        
-        this.orderObstacle(this.start);
-
-        var polygons = Array.from(this.obstacles);
+        var polygons = this.obstacles.get();
 
         var points = [];
         points[points.length] = this.start;
 
         for(var i = 0; i < polygons.length; i++) {
-            console.log(polygons[i].vectrices);
-            points = points.concat(this.getPointOfObstacles(polygons[i].vectrices));
+            points = points.concat(polygons[i].getPoints());
         }
 
         points[points.length] = this.end;
         var graph = new Graph(points);
-        console.log(graph);
         graph.build(polygons);
+
         var shortest_path = graph.shortestPath(this.start, this.end);
 
-        if (is_needed_to_draw && (!option.draw.optimize || option.draw.step)) {
-            this.svg.addMultiplePolygons(polygons);
-            this.svg.addMultipleSegments(shortest_path);
-            this.svg.draw();
-            this.svg.save();
-        }
+        this.endDraw();
 
         return shortest_path;
     }
 }
 
 module.exports = Path;
-},{"./graph.js":6,"./point.js":8,"./polygon.js":9,"./segment.js":10,"./svg":11}],8:[function(require,module,exports){
+},{"./graph.js":6,"./point.js":9,"./svg":12}],9:[function(require,module,exports){
 class Point {
     constructor(x, y) {
         this.x = x;
@@ -1073,19 +1072,17 @@ class Point {
 }
 
 module.exports = Point;
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 const Point = require("./point.js");
 const Segment = require("./segment.js");
 
 class Polygon {
     constructor() {
         this.vectrices = [];
-        this.crossable = [];
     }
 
     addVector(x, y) {
         this.vectrices.push(new Point(x, y));
-        this.crossable = Array.from(this.vectrices);
     }
 
     size() {
@@ -1131,6 +1128,28 @@ class Polygon {
         return segments;
     }
 
+    getPoints() {
+        var points = [];
+        for(var i = 0; i < this.vectrices.length; i++) {
+            var find = false;
+
+            for(var j = 0; j < points.length; j++) {
+                if(this.vectrices[i].equals(points[j])) {
+                    find = true;
+                    break;
+                }
+            }
+
+            if(find == false) {
+                points[points.length] = this.vectrices[i];
+            }
+            
+        }
+        
+        return points;
+    }
+    
+
     inside(point) {
         var j = this.size() - 1;
         var inside = false;
@@ -1168,7 +1187,7 @@ class Polygon {
 }
 
 module.exports = Polygon;
-},{"./point.js":8,"./segment.js":10}],10:[function(require,module,exports){
+},{"./point.js":9,"./segment.js":11}],11:[function(require,module,exports){
 const Point = require("./point.js");
 
 class Segment {
@@ -1197,18 +1216,6 @@ class Segment {
     }
 
     isInBox(point) {
-
-        /*
-        var ax = this.p1.x - this.p2.x;
-        var ay = this.p1.y - this.p2.y;
-        var apx = point.x - this.p1.x;
-        var apy = point.y - this.p1.y;
-
-        if( ax * apy != ay * apx) {
-            return false;
-        }*/
-
-
         if ((point.x == this.p1.x && point.y == this.p1.y) || (point.x == this.p2.x && point.y == this.p2.y))
 		{
 			return true;
@@ -1216,7 +1223,7 @@ class Segment {
 
         return ( (point.x > this.p1.x && point.x < this.p2.x) || (point.y > this.p1.y && point.y < this.p2.y));
     }
-    
+
     intersectionNoEdge(segment) {
         if (this.p1.equals(segment.p1)) {
             return null;
@@ -1279,6 +1286,25 @@ class Segment {
         return null;
     }
 
+    crossMultiple(polygons) {
+        for(var h = 0; h < polygons.length; h++) {
+            var result = false
+
+            if(polygons[h].isSegment()) {
+                result = this.intersectionNoEdge(polygons[h].buildSegments()[0]);
+            }
+            else {
+                result = this.cross(polygons[h]);
+            }
+            
+            if(result) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     cross(polygon) {
 
         var split_point = null;
@@ -1313,7 +1339,7 @@ class Segment {
 }
 
 module.exports = Segment;
-},{"./point.js":8}],11:[function(require,module,exports){
+},{"./point.js":9}],12:[function(require,module,exports){
 (function (__dirname){(function (){
 const path = require('path');
 const fs = require('fs');

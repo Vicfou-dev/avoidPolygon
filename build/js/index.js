@@ -349,6 +349,7 @@ class Manager {
         }
 
         var path = new module.Path(pstart, pend);
+        var obstacles = new module.Obstacles();
         for (var i = 0; i < this.polygons.length; i++) {
             var classname = this.polygons[i].getAttribute('class');
             var points = document.querySelectorAll("circle." + classname);
@@ -361,10 +362,13 @@ class Manager {
                 paths.push([x, y]);
             }
             
-            var poly = this.resizePolygone(path.makePolygon(paths),0);
+            var poly = this.resizePolygone(obstacles.make(paths),0);
 
-            path.createObstacle(poly);
+            obstacles.add(poly);
         }
+
+        path.setObstacles(obstacles);
+
         var result = path.find({
             optimize: true
         });

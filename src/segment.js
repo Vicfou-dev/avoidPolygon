@@ -26,18 +26,6 @@ class Segment {
     }
 
     isInBox(point) {
-
-        /*
-        var ax = this.p1.x - this.p2.x;
-        var ay = this.p1.y - this.p2.y;
-        var apx = point.x - this.p1.x;
-        var apy = point.y - this.p1.y;
-
-        if( ax * apy != ay * apx) {
-            return false;
-        }*/
-
-
         if ((point.x == this.p1.x && point.y == this.p1.y) || (point.x == this.p2.x && point.y == this.p2.y))
 		{
 			return true;
@@ -45,7 +33,7 @@ class Segment {
 
         return ( (point.x > this.p1.x && point.x < this.p2.x) || (point.y > this.p1.y && point.y < this.p2.y));
     }
-    
+
     intersectionNoEdge(segment) {
         if (this.p1.equals(segment.p1)) {
             return null;
@@ -106,6 +94,25 @@ class Segment {
         }
 			
         return null;
+    }
+
+    crossMultiple(polygons) {
+        for(var h = 0; h < polygons.length; h++) {
+            var result = false
+
+            if(polygons[h].isSegment()) {
+                result = this.intersectionNoEdge(polygons[h].buildSegments()[0]);
+            }
+            else {
+                result = this.cross(polygons[h]);
+            }
+            
+            if(result) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     cross(polygon) {

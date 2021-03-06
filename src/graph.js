@@ -14,14 +14,7 @@ class graph {
             for(var j = i + 1; j < this.points.length; j++) {
 
                 var segment = new Segment(this.points[j], this.points[i]);
-                var crossed = false;
-                for(var h = 0; h < polygons.length; h++) {
-                    var result = polygons[h].isSegment() ? segment.intersectionNoEdge(polygons[h].buildSegments()[0]) : segment.cross(polygons[h]);
-                    if(result) {
-                        var crossed = true;
-                        break;
-                    }
-                }
+                var crossed = segment.crossMultiple(polygons)
 
                 if(!crossed) {
                     graph[i][j] = segment.distance();
@@ -34,10 +27,9 @@ class graph {
 
     shortestPath(start, end) {
         var algo = new Dijkstra(this.graph);
-        console.log(this.points.indexOf(start),this.points.indexOf(end))
+
         var edges = algo.exec(this.points.indexOf(start), this.points.indexOf(end));
 
-        console.log(edges);
         var edges_point = [];
         for(var i = 0; i < this.points.length; i++) {
             for(var j = 0; j < edges.length; j++) {

@@ -53,6 +53,28 @@ class Polygon {
         return segments;
     }
 
+    getPoints() {
+        var points = [];
+        for(var i = 0; i < this.vectrices.length; i++) {
+            var find = false;
+
+            for(var j = 0; j < points.length; j++) {
+                if(this.vectrices[i].equals(points[j])) {
+                    find = true;
+                    break;
+                }
+            }
+
+            if(find == false) {
+                points[points.length] = this.vectrices[i];
+            }
+            
+        }
+        
+        return points;
+    }
+    
+
     inside(point) {
         var j = this.size() - 1;
         var inside = false;
