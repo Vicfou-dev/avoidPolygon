@@ -79,35 +79,23 @@ class Path {
         return (this.svg === null || this.svg === undefined) ? undefined : this.svg.getContent();
     }
 
-    getPointOfPath(path) {
+    getPointOfObstacles(path) {
         var points = [];
         for(var i = 0; i < path.length; i++) {
-
             var find = false;
             for(var j = 0; j < points.length; j++) {
-                if(path[i].p1.equals(points[j])) {
+                if(path[i].equals(points[j])) {
                     find = true;
                     break;
                 }
             }
 
             if(find == false) {
-                points[points.length] = path[i].p1;
+                points[points.length] = path[i];
             }
             
-            find = false;
-            for(var j = 0; j < points.length; j++) {
-                if(path[i].p2.equals(points[j])) {
-                    find = true;
-                    break;
-                }
-            }
-
-            if(find == false) {
-                points[points.length] = path[i].p2;
-            }
         }
-
+        
         return points;
     }
 
@@ -124,6 +112,8 @@ class Path {
             }
         }
     }
+
+
 
     find(option = {}) {
 
@@ -150,55 +140,23 @@ class Path {
             }
 
         }
-
-        var segments = [];
         
         this.orderObstacle(this.start);
 
         var polygons = Array.from(this.obstacles);
-        
-        var paths = [];
-        paths[paths.length] = [inital]
-        
-        for (var i = 0; i < polygons.length; i++) {
-            var lastrow = paths[paths.length - 1]; 
 
-            var segment = lastrow[lastrow.length - 1];
-                    
-            var segments = segment.avoidPolygon(polygons[i]);
+        var points = [];
+        points[points.length] = this.start;
 
-            var new_row = [];
-            for(var p = 0; p < lastrow.length - 1; p++) {
-                new_row[new_row.length] = lastrow[p];
-            }
-                    
-            for(var h = 0; h < segments.length; h++) {
-                new_row[new_row.length] = segments[h];
-            }
-
-            paths[paths.length] = new_row;
-
+        for(var i = 0; i < polygons.length; i++) {
+            console.log(polygons[i].vectrices);
+            points = points.concat(this.getPointOfObstacles(polygons[i].vectrices));
         }
 
-        const path = paths[paths.length - 1];
-        var points = this.getPointOfPath(path);
+        points[points.length] = this.end;
         var graph = new Graph(points);
-        graph.build(polygons);
 
-        var edges = graph.dijkstra(this.start, this.end);
-        var edges_point = [];
-        for(var i = 0; i < points.length; i++) {
-            for(var j = 0; j < edges.length; j++) {
-                if(edges[j] == i) {
-                    edges_point[edges_point.length] = points[i];
-                }
-            }
-        }
-
-        var shortest_path = [];
-        for(var i = 0; i < edges_point.length - 1; i++) {
-            shortest_path[shortest_path.length] = new Segment(edges_point[i], edges_point[i + 1]);
-        }
+        var shortest_path = graph.shortestPath(this.start, this.end);
 
         if (is_needed_to_draw && (!option.draw.optimize || option.draw.step)) {
             this.svg.addMultiplePolygons(polygons);

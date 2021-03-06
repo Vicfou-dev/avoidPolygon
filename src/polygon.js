@@ -4,12 +4,10 @@ const Segment = require("./segment.js");
 class Polygon {
     constructor() {
         this.vectrices = [];
-        this.crossable = [];
     }
 
     addVector(x, y) {
         this.vectrices.push(new Point(x, y));
-        this.crossable = Array.from(this.vectrices);
     }
 
     size() {
@@ -43,6 +41,18 @@ class Polygon {
         return centroid;
     }
 
+    buildSegments() {
+        var segments = [];
+        for (var i = 0; i < this.size(); i++)
+        {
+            var p1 = this.vectrices[i];
+			var p2 = this.vectrices[(i + 1) % this.size()];
+            segments[segments.length] = new Segment(p1,p2);
+        }
+
+        return segments;
+    }
+
     inside(point) {
         var j = this.size() - 1;
         var inside = false;
@@ -59,11 +69,6 @@ class Polygon {
         }
 
         return inside;
-    }
-
-    encounter(segment) {
-        var result = this.size() <= 2 ? segment.cut(new Segment(this.vectrices[0], this.vectrices[this.vectrices.length - 1])) : segment.cross(this);
-        return result ? true : false;
     }
 
     cover(segment) {

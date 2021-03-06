@@ -32,8 +32,6 @@ class Point {
 
             }
         }
-
-        points.splice(index, 1);
         
         return point;
 
