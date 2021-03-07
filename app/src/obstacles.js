@@ -1,4 +1,4 @@
-const Polygon = require('./polygon.js.js');
+const Polygon = require('./polygon.js');
 
 class obstacles {
 

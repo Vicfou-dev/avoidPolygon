@@ -88,11 +88,15 @@ class Manager {
         if (!this.makePolygon) {
             return;
         }
-        this.createPolygon(this.cache, "polygon" + (this.polygons.length + 1));
         var polygon = new module.Polygon();
         for (var i = 0; i < this.cache.length; i++) {
             polygon.addVector(this.cache[i].x, this.cache[i].y);
         }
+        if(!polygon.inside(this.end) && !polygon.inside(this.start)) {
+            this.createPolygon(this.cache, "polygon" + (this.polygons.length + 1));
+        }
+        
+    
         this.cache = [];
         this.changeOptionMakingPolygon();
         this.drag();
@@ -306,6 +310,7 @@ class Manager {
             } else {
                 this.endDrag();
             }
+            
         }
         var draggable = new Draggable(polygon, {
             onPress: function () {
@@ -364,8 +369,14 @@ class Manager {
             
             var poly = this.resizePolygone(obstacles.make(paths),0);
 
+            if(poly.size() < 2) {
+                this.polygons.splice(i, 1) 
+                continue;
+            }
             obstacles.add(poly);
         }
+
+        console.log(obstacles);
 
         path.setObstacles(obstacles);
 
