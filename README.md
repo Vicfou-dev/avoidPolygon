@@ -2,6 +2,6 @@
 
 Find the shortest path beetween two points
 
-Try it here : https://polygon-avoid.herokuapp.com[https://polygon-avoid.herokuapp.com/web/index.html]
+Try it here : https://polygon-avoid.herokuapp.com
 
 By Vicfou Dev
