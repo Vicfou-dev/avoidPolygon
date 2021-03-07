@@ -1056,12 +1056,9 @@ class Point {
     nearest(points) {
 
         var point = points[0];
-        var index = 0;
         for(var i = 0; i < points.length; i++) {
             if(this.distance(point) >= this.distance(points[i])) {
                 point = points[i];
-                index = i;
-
             }
         }
         

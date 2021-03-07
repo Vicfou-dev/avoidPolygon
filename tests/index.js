@@ -1,4 +1,4 @@
-const Path = require('../index.js').Path;
+const Path = require('../app/index.js').Path;
 
 const path = new Path({
     x: 40,
